@@ -1,0 +1,28 @@
+{
+  "schema_version": "2.0",
+  "resources": [
+    {
+      "role_name": "medusa-dev",
+      "role_arn": "arn:aws:iam::211386729343:role/medusa-dev",
+      "name": "default-role",
+      "resource_type": "iam_role"
+    },
+    {
+      "lambda_arn": "arn:aws:lambda:ap-south-1:211386729343:function:medusa-dev",
+      "name": "api_handler",
+      "resource_type": "lambda_function"
+    },
+    {
+      "lambda_arn": "arn:aws:lambda:ap-south-1:211386729343:function:medusa-dev-jwt_auth",
+      "name": "jwt_auth",
+      "resource_type": "lambda_function"
+    },
+    {
+      "name": "rest_api",
+      "rest_api_id": "5kq1kfmsg4",
+      "rest_api_url": "https://5kq1kfmsg4.execute-api.ap-south-1.amazonaws.com/api/",
+      "resource_type": "rest_api"
+    }
+  ],
+  "backend": "api"
+}

@@ -7,6 +7,9 @@
 #### Create Users table and save it to config.json
 $ python db.py --table-type users --stage dev
 
+#### Create App table and save it to config.json
+$ python db.py --table-type app --stage dev
+
 #### Create a test user:
 $ python users.py --create-user
 Username: myusername

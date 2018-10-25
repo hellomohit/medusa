@@ -1,6 +1,10 @@
 {
   "stages": {
     "dev": {
+      "environment_variables": {
+        "USERS_TABLE_NAME": "users-app-b79fa490-182c-4e5d-879f-d21431e46f3d",
+        "APP_TABLE_NAME": "todo-app-a1a540c8-3848-4141-899e-0c74c1e0ff53"
+      },
       "api_gateway_stage": "api"
     }
   },
