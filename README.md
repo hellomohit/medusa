@@ -1,8 +1,8 @@
 #### Install packages
-* pip install -r requirements.txt --user
+$ pip install -r requirements.txt --user
 
 #### Start local server
-* chalice local
+$ chalice local
 
 #### Create Users table and save it to config.json
 $ python db.py --table-type users --stage dev
@@ -22,4 +22,4 @@ Password:
 Password verified.
 
 #### Deploy the code
-* chalice deploy
+$ chalice deploy
