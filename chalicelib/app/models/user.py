@@ -13,6 +13,13 @@ class User(object):
     """docstring for User."""
     def __init__(self,args={}):
         super(User, self).__init__()
+        if 'password' in args:
+            password = args['password']
+            password_fields = self.encode_password(password)
+            args['hash'] = password_fields['hash']
+            args['salt'] = Binary(password_fields['salt'])
+            args['rounds'] = password_fields['rounds']
+            args['hashed'] = Binary(password_fields['hashed'])
         self.name = args['name'] if('name' in args) else None
         self.gender = args['gender'] if('gender' in args) else None
         self.club = args['club'] if('club' in args) else None

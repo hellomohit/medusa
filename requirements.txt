@@ -5,4 +5,4 @@ PyJWT>=1.5
 mako
 Babel
 pandas
-django
+flask
