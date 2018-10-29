@@ -8,6 +8,8 @@ import hmac
 import uuid
 import datetime
 from boto3.dynamodb.types import Binary
+S3 = boto3.client('s3', region_name='ap-south-1')
+USER_BUCKET = 'medusa-user-profile-pic'
 # from mailer.user_mailer import UserMailer
 class User(object):
     """docstring for User."""
@@ -20,6 +22,8 @@ class User(object):
             args['salt'] = Binary(password_fields['salt'])
             args['rounds'] = password_fields['rounds']
             args['hashed'] = Binary(password_fields['hashed'])
+        self.uid = args['uid'] if('uid' in args) else str(uuid.uuid4())
+        self.profile_pic_url = args['profile_pic_url'] if('profile_pic_url' in args) else None
         self.name = args['name'] if('name' in args) else None
         self.gender = args['gender'] if('gender' in args) else None
         self.club = args['club'] if('club' in args) else None
@@ -49,12 +53,14 @@ class User(object):
         self.update_at = args['update_at'] if('update_at' in args) else str(datetime.datetime.now())
     def attributes(self):
         item = {
+            'uid': self.uid,
             'name': self.name,
             'gender': self.gender,
             'club': self.club,
             'is_coach': self.is_coach,
             'is_admin': self.is_admin,
             'username': self.username,
+            'profile_pic_url': self.profile_pic_url,
             # 'hash': self.hash,
             # 'salt': self.salt,
             # 'rounds': self.rounds,
@@ -88,7 +94,28 @@ class User(object):
             return user
         else:
             return None
-
+    def update_profile_pic(self,file_name,body):
+        # write body to tmp file
+        tmp_file_name = '/tmp/' + file_name
+        with open(tmp_file_name, 'wb') as tmp_file:
+            tmp_file.write(body)
+        # upload tmp file to s3 bucket
+        self.profile_pic_url = (self.pic_key() +'/' + file_name)
+        S3.upload_file(tmp_file_name, USER_BUCKET, self.profile_pic_url)
+        self.save()
+        return self.profile_pic_url
+    def pic_key(self):
+        return 'UserProfilePic' + self.uid
+    def get_profile_pic(self):
+        # bucket_location = boto3.client('s3').get_bucket_location(Bucket=USER_BUCKET)
+        return S3.generate_presigned_url(
+                ClientMethod='get_object',
+                Params={
+                    'Bucket': USER_BUCKET,
+                    'Key': self.profile_pic_url
+                }
+            )
+        # return S3.get_object(Bucket=USER_BUCKET, Key=self.profile_pic_url)
     def update_attributes(self,item_json):
         table_name = self.get_table_name()
         table = boto3.resource('dynamodb').Table(table_name)
@@ -103,6 +130,7 @@ class User(object):
         print(response)
         self.assign_attributes(item)
         return self.attributes()
+
     def prepare_update_data(self,item):
         data = {}
         for key,val in item.items():
@@ -112,6 +140,8 @@ class User(object):
     def allowed_attributes(self):
         return ['name','gender','club']
     def assign_attributes(self,item):
+        self.uid = item['uid'] if('uid' in item) else str(uuid.uuid4())
+        self.profile_pic_url = item['profile_pic_url'] if('profile_pic_url' in item) else None
         self.name = item['name'] if('name' in item) else None
         self.gender = item['gender'] if('gender' in item) else None
         self.club = item['club'] if('club' in item) else None

@@ -4,6 +4,9 @@ $ pip install -r requirements.txt --user
 #### Start local server
 $ chalice local
 
+#### Generate Model
+$ python g.py --model User
+
 #### Create Users table and save it to config.json
 $ python db.py --table-type users --stage dev
 

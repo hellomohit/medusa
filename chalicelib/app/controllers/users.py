@@ -1,6 +1,11 @@
 from chalicelib.config.application import *
+from chalicelib.config.application import _get_parts
 # Import The Model
-from chalicelib.app.models.user import User
+from chalicelib.app.models.user import User,S3,USER_BUCKET
+import cgi
+from io import BytesIO
+
+
 # Write your Controller
 @app.route('/users', methods=['POST'])
 def create_user():
@@ -50,7 +55,7 @@ def get_user():
     print('User Name:',username)
     return user.attributes()
 
-@app.route('/me/update', methods=['POST'], authorizer=jwt_auth)
+@app.route('/me/update', methods=['POST','PUT'], authorizer=jwt_auth)
 def update_current_user():
     body = app.current_request.json_body
     username = get_authorized_username(app.current_request)
@@ -61,6 +66,29 @@ def update_current_user():
     else:
         return_data = {'error': 'Record not found.'}
     return return_data
+
+@app.route('/me/update_pic/{file_name}', methods=['POST'],content_types=['application/x-www-form-urlencoded','multipart/form-data'], authorizer=jwt_auth)
+def s3objects(file_name):
+    request = app.current_request
+    username = get_authorized_username(app.current_request)
+    user = User.find(username)
+    print(user.pic_key(),USER_BUCKET)
+    body = app.current_request.raw_body
+    user.update_profile_pic(file_name,body)
+    return {
+        "uploaded": "true",
+        "profile_pic_url": user.profile_pic_url,
+    }
+@app.route('/me/profile_pic',#content_types=['application/octet-stream'],
+methods=['GET'], authorizer=jwt_auth)
+def getS3objects():
+    request = app.current_request
+    username = get_authorized_username(app.current_request)
+    user = User.find(username)
+    try:
+        return {'image_url': user.get_profile_pic()}
+    except ClientError as e:
+        raise NotFoundError('image')
 
 # Rest API code
 def get_app_db():
@@ -76,15 +104,3 @@ def get_authorized_username(current_request):
     return current_request.context['authorizer']['principalId']
 def get_table_name(stage=None):
     return os.environ['USERS_TABLE_NAME']
-
-def encode_password(password, salt=None):
-    if salt is None:
-        salt = os.urandom(16)
-    rounds = 100000
-    hashed = hashlib.pbkdf2_hmac('sha256', password, salt, rounds)
-    return {
-        'hash': 'sha256',
-        'salt': salt,
-        'rounds': rounds,
-        'hashed': hashed,
-    }

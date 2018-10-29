@@ -1,7 +1,7 @@
 from chalicelib.config.application import *
 @app.route('/')
 def index():
-    return {'hello': 'world'}
+    return {'medusa': 'Welcome to Serverless MVC framework.'}
 
 
 # The view function above will return {"hello": "world"}
