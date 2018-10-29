@@ -77,7 +77,7 @@ def s3objects(file_name):
     user.update_profile_pic(file_name,body)
     return {
         "uploaded": "true",
-        "profile_pic_url": user.profile_pic_url,
+        "profile_pic_url": user.get_profile_pic(),
     }
 @app.route('/me/profile_pic',#content_types=['application/octet-stream'],
 methods=['GET'], authorizer=jwt_auth)
