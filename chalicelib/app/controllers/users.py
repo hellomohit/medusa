@@ -66,6 +66,19 @@ def update_current_user():
     else:
         return_data = {'error': 'Record not found.'}
     return return_data
+@app.route('/me/upload', methods=['POST'],
+           content_types=['multipart/form-data'], authorizer=jwt_auth)
+def upload():
+    files = _get_parts()
+    print(files['file'])
+    username = get_authorized_username(app.current_request)
+    user = User.find(username)
+    print(user.pic_key(),USER_BUCKET,app.current_request.headers)
+    user.update_profile_pic(files['file'].filename,files['file'].value)
+    return {
+        "uploaded": "true",
+        "profile_pic_url": user.get_profile_pic(),
+    }
 
 @app.route('/me/update_pic/{file_name}', methods=['POST'],content_types=['application/x-www-form-urlencoded','multipart/form-data'], authorizer=jwt_auth)
 def s3objects(file_name):

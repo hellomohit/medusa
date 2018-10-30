@@ -43,8 +43,13 @@ _USER_DB = None
 #boto3.resource('dynamodb').Table(os.environ['USERS_TABLE_NAME'])
 def _get_parts():
     rfile = BytesIO(app.current_request.raw_body)
-    # content_type = app.current_request.headers['content-type']
-    # _, parameters = cgi.parse_header(content_type)
-    # parameters['boundary'] = parameters['boundary'].encode('utf-8')
-    # parsed = cgi.parse_multipart(rfile, parameters)
-    return rfile
+    headers = app.current_request.headers
+    content_type = app.current_request.headers['content-type']
+    content_length = app.current_request.headers['content-length']
+    _, parameters = cgi.parse_header(content_type)
+    parameters['boundary'] = parameters['boundary'].encode('utf-8')
+    form = cgi.FieldStorage(fp=rfile, environ={'REQUEST_METHOD': 'POST'},headers={
+            'content-type': content_type,
+            'content-length': content_length
+        },keep_blank_values=True)
+    return form
