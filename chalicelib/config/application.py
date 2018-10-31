@@ -45,11 +45,7 @@ def _get_parts():
     rfile = BytesIO(app.current_request.raw_body)
     headers = app.current_request.headers
     content_type = app.current_request.headers['content-type']
-    content_length = app.current_request.headers['content-length']
-    _, parameters = cgi.parse_header(content_type)
-    parameters['boundary'] = parameters['boundary'].encode('utf-8')
     form = cgi.FieldStorage(fp=rfile, environ={'REQUEST_METHOD': 'POST'},headers={
             'content-type': content_type,
-            'content-length': content_length
         },keep_blank_values=True)
     return form

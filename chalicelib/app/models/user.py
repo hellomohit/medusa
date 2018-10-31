@@ -122,12 +122,10 @@ class User(object):
         # item_json['update_at'] = str(datetime.datetime.now())
         item = self.attributes()
         item.update(item_json)
-        print(item_json)
         response = table.update_item(
             Key={'username': self.username},
             AttributeUpdates = self.prepare_update_data(item_json),
         )
-        print(response)
         self.assign_attributes(item)
         return self.attributes()
 

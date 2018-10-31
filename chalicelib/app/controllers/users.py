@@ -11,12 +11,10 @@ from io import BytesIO
 def create_user():
     # This is the JSON body the user sent in their POST request.
     user_as_json = app.current_request.json_body
-    print(os.getenv('USERS_TABLE_NAME'))
     table_name = get_table_name()
     table = boto3.resource('dynamodb').Table(table_name)
     username = user_as_json['username']
     user_detail = User.find(user_as_json['username'])
-    print('User Detail',username,user_detail)
     if user_detail != None:
         return {'error': 'Username has been taken.'}
     else:
@@ -44,7 +42,6 @@ def login():
 @app.authorizer()
 def jwt_auth(auth_request):
     token = auth_request.token
-    print('Token',token)
     decoded = auth.decode_jwt_token(token)
     return AuthResponse(routes=['*'], principal_id=decoded['sub'])
 
@@ -52,7 +49,6 @@ def jwt_auth(auth_request):
 def get_user():
     username = get_authorized_username(app.current_request)
     user = User.find(username)
-    print('User Name:',username)
     return user.attributes()
 
 @app.route('/me/update', methods=['POST','PUT'], authorizer=jwt_auth)
@@ -70,10 +66,8 @@ def update_current_user():
            content_types=['multipart/form-data'], authorizer=jwt_auth)
 def upload():
     files = _get_parts()
-    print(files['file'])
     username = get_authorized_username(app.current_request)
     user = User.find(username)
-    print(user.pic_key(),USER_BUCKET,app.current_request.headers)
     user.update_profile_pic(files['file'].filename,files['file'].value)
     return {
         "uploaded": "true",
@@ -85,7 +79,6 @@ def s3objects(file_name):
     request = app.current_request
     username = get_authorized_username(app.current_request)
     user = User.find(username)
-    print(user.pic_key(),USER_BUCKET)
     body = app.current_request.raw_body
     user.update_profile_pic(file_name,body)
     return {
