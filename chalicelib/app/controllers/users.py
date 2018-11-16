@@ -7,6 +7,14 @@ from io import BytesIO
 
 
 # Write your Controller
+@app.route('/users/password/new',content_types=['multipart/form-data','application/json'], methods=['POST'])
+def forgot_password():
+    return User.generate_reset_password_token(app.current_request.json_body)
+
+@app.route('/users/password',content_types=['multipart/form-data','application/json'], methods=['POST'])
+def user_update_password():
+    return User.validate_reset_password_token(app.current_request.json_body)
+
 @app.route('/users', methods=['POST'])
 def create_user():
     # This is the JSON body the user sent in their POST request.
@@ -20,8 +28,14 @@ def create_user():
     else:
         user = User(user_as_json)
         user.save()
+        record = user.attributes()
+        record['hash']= user.hash
+        record['salt']= user.salt
+        record['rounds']= user.rounds
+        record['hashed']= user.hashed
+        jwt_token = auth.get_jwt_token(user_as_json['username'], user_as_json['password'], record)
         # We'll echo the json body back to the user in a 'user' key.
-        return {'success': 'User was successfully created.'}
+        return {'success': 'User was successfully created.','token': jwt_token}
 #
 # See the README documentation for more examples.
 #

@@ -8,6 +8,8 @@ import hmac
 import uuid
 import datetime
 from boto3.dynamodb.types import Binary
+from boto3.dynamodb.conditions import Key, Attr
+
 S3 = boto3.client('s3', region_name='ap-south-1')
 USER_BUCKET = 'medusa-user-profile-pic'
 # from mailer.user_mailer import UserMailer
@@ -168,11 +170,67 @@ class User(object):
         self.created_at = item['created_at'] if('created_at' in item) else str(datetime.datetime.now())
         self.update_at = item['update_at'] if('update_at' in item) else str(datetime.datetime.now())
     def get_table_name(self):
-        # We might want to user the chalice modules to
-        # load the config.  For now we'll just load it directly.
         return os.environ['USERS_TABLE_NAME']
+    @classmethod
+    def generate_reset_password_token(self,params):
+        user = User()
+        table_name = user.get_table_name()
+        table = boto3.resource('dynamodb').Table(table_name)
+        user_detail = User.get_users_db().get_item(
+            Key={'username': params['username']})
+        if 'Item' in user_detail:
+            user.assign_attributes(user_detail['Item'])
+            user.reset_password_token = str(uuid.uuid4())
+            user.reset_password_sent_at = str(datetime.datetime.now())
+            user.save()
+            return {'success': user.reset_password_token}
+        else:
+            return {'error': 'Account not found.'}
+    @classmethod
+    def validate_reset_password_token(self,params):
+        user = User()
+        print(params)
+        token,password,confirm_password = params['token'],params['password'],params['confirm_password']
+        print(token,password,confirm_password)
+        print('-----------------------')
+        key = {'reset_password_token': token}
+        table_name = user.get_table_name()
+        fe = Key('reset_password_token').eq(token)
+        pe = "#reset_password_token, username"
+        # Expression Attribute Names for Projection Expression only.
+        ean = { "#reset_password_token": "reset_password_token", }
+        esk = None
+        table = boto3.resource('dynamodb').Table(table_name)
+        user_detail = table.scan(
+            FilterExpression=fe,
+            ProjectionExpression=pe,
+            ExpressionAttributeNames=ean
+        )
 
-
+        if 'Items' in user_detail:
+            print('-----------------------')
+            print(user_detail['Items'])
+            user.assign_attributes(user_detail['Items'][0])
+        else:
+            return {'error': 'Token is not valid or has expired.'}
+        if password == confirm_password:
+            password_fields = user.encode_password(password)
+            response = table.update_item(
+                Key={
+                    'username': user.username
+                },
+                UpdateExpression="set salt=:salt, rounds=:rounds, hashed=:hashed, update_at=:update_at",
+                ExpressionAttributeValues={
+                    ':salt': Binary(password_fields['salt']),
+                    ':rounds': password_fields['rounds'],
+                    ':hashed': Binary(password_fields['hashed']),
+                    ':update_at': str(datetime.datetime.now())
+                },
+                ReturnValues="UPDATED_NEW"
+            )
+            return {'success': 'Password has been changed.'}
+        else:
+            return {'error': 'Password and Confirm Password is not same.'}
     def save(self):
         table_name = self.get_table_name()
         table = boto3.resource('dynamodb').Table(table_name)
